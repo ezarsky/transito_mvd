@@ -10,7 +10,7 @@ months = ['January', 'February', 'March',
 
 day_stats_dfs = []
 start_year = 2021
-end_year = 2021
+end_year = 2024
 
 for y in range(start_year, end_year+1):
     year = str(y)
@@ -104,7 +104,7 @@ fig.subplots_adjust(hspace=0.4)
 plt.show()
 
 fig, ax = plt.subplots()
-ax.plot(total_stats.index, total_stats['vel_50th'], color = 'navy')
+ax.plot(total_stats.index, total_stats['detector_counts'], color = 'purple')
 ax.set_xlabel('Date')
 ax.set_ylabel('Number of detectors active')
 ax.set_title('Active Detectors Over Time')
