@@ -1,4 +1,3 @@
-import datetime
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,18 +9,23 @@ months = ['January', 'February', 'March',
           'October', 'November', 'December']
 
 day_stats_dfs = []
+start_year = 2021
+end_year = 2021
 
-for y in range(2021, 2024+1):
+for y in range(start_year, end_year+1):
     year = str(y)
     for m in range(0, 12):
         print(f'Processing data from {months[m]} {year}...')
         month = str(m+1).zfill(2)
         velocity_path = f"../data/velocidad_{year}_{month}.csv"
         volume_path = f"../data/volumen_{year}_{month}.csv"
-    
-        velocity_data = pd.read_csv(velocity_path)
-        volume_data = pd.read_csv(volume_path)
         
+        try:
+            velocity_data = pd.read_csv(velocity_path)
+            volume_data = pd.read_csv(volume_path)
+        except FileNotFoundError:
+            continue
+                
         velocity_data = velocity_data.drop_duplicates()
         volume_data = volume_data.drop_duplicates()
         
@@ -49,7 +53,16 @@ for y in range(2021, 2024+1):
                                              'dsc_int_siguiente'])
         
         all_data['date'] = all_data['timestamp'].dt.date
-
+        dates = all_data['date'].unique()
+        detector_counts = []
+        for date in dates:
+            day_data = all_data[all_data['date'] == date]
+            detectors = day_data.groupby(['dsc_avenida', 'dsc_int_anterior', 'dsc_int_siguiente', 'id_carril']).groups
+            detector_count = len(detectors)
+            detector_counts.append(detector_count)
+        
+        detector_counts = pd.Series(detector_counts, dates)
+        
         day_stats = all_data.groupby(['date']).agg( 
             vel_10th=pd.NamedAgg(column = 'velocidad', aggfunc=lambda x: np.percentile(x, 10)),
             vel_25th=pd.NamedAgg(column = 'velocidad', aggfunc=lambda x: np.percentile(x, 25)),
@@ -63,6 +76,7 @@ for y in range(2021, 2024+1):
             vol_90th=pd.NamedAgg(column = 'volume', aggfunc=lambda x: np.percentile(x, 90))
             )
 
+        day_stats['detector_counts'] = detector_counts
         day_stats_dfs.append(day_stats)    
         
 total_stats = pd.concat(day_stats_dfs)
@@ -83,8 +97,15 @@ axs[1].fill_between(total_stats.index, total_stats['vol_25th'],
 axs[1].fill_between(total_stats.index, total_stats['vol_10th'], 
                     total_stats['vol_90th'], color = 'maroon', alpha = 0.2)
 axs[1].set_ylim(bottom=0, top=80)
-axs[1].set_ylabel('Time of Day')
+axs[1].set_xlabel('Date')
 axs[1].set_ylabel('Number of cars \n(past 5 min)')
 axs[1].set_title('Volume Over Time')
 fig.subplots_adjust(hspace=0.4)
+plt.show()
+
+fig, ax = plt.subplots()
+ax.plot(total_stats.index, total_stats['vel_50th'], color = 'navy')
+ax.set_xlabel('Date')
+ax.set_ylabel('Number of detectors active')
+ax.set_title('Active Detectors Over Time')
 plt.show()
