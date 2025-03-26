@@ -10,7 +10,7 @@ months = ['January', 'February', 'March',
 
 day_stats_dfs = []
 start_year = 2021
-end_year = 2024
+end_year = 2021
 
 for y in range(start_year, end_year+1):
     year = str(y)
@@ -23,6 +23,7 @@ for y in range(start_year, end_year+1):
         try:
             velocity_data = pd.read_csv(velocity_path)
             volume_data = pd.read_csv(volume_path)
+        
         except FileNotFoundError:
             continue
                 
@@ -41,9 +42,6 @@ for y in range(start_year, end_year+1):
         
         velocity_data = velocity_data.drop(columns=['fecha', 'hora'])
         volume_data = volume_data.drop(columns=['fecha', 'hora'])
-        
-        velocity_sample = velocity_data.head(1500)
-        volume_sample = volume_data.head(1500)
         
         
         all_data = velocity_data.merge(volume_data, how='inner', 

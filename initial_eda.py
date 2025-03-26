@@ -1,8 +1,9 @@
-import datetime
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 from utils import round_time_5min
+
+rng = np.random.default_rng(7)
 
 velocity_path = "../data/velocidad_2022_12.csv"
 volume_path = "../data/volumen_2022_12.csv"
@@ -58,21 +59,27 @@ plt.show()
 
 
 # TODO: correlation (do this by intersection/detector)
-all_data[['velocidad', 'volume']].corr()
-all_data[['velocidad', 'volumen_hora']].corr()
+detectors = all_data.groupby(['dsc_avenida', 'dsc_int_anterior', 'dsc_int_siguiente', 'id_carril']).groups
+for detector in detectors:
+    road, prev_road, next_road, lane = detector
+    idxs = detectors[detector]
+    detector_data = all_data.loc[idxs, :]
+    
+    if detector_data.shape[0] != 0:
 
-fig, ax = plt.subplots()
-ax.scatter(all_data['velocidad'], all_data['volume'])
-ax.set_xlabel('Velocity')
-ax.set_ylabel('Volume (last 5 min)')
-plt.show()
+        correlation = detector_data[['volume', 'velocidad']].corr().iloc[0, 1]
+        correlation = round(correlation, 4)
+        text_position = (0.8 * detector_data['volume'].max(), detector_data['velocidad'].max())
+        
+        fig, ax = plt.subplots()
+        ax.scatter(detector_data['volume'], detector_data['velocidad'])
+        ax.text(*text_position, f'$r \\approx ${correlation}')
+        ax.set_xlabel('Volume (last 5 min)')
+        ax.set_ylabel('Velocity')
+        ax.set_title(f'Velocity vs. Volume\n({road} entre {prev_road} y {next_road}, Carril {lane})')
+        plt.show()
 
-fig, ax = plt.subplots()
-ax.scatter(all_data['velocidad'], all_data['volumen_hora'])
-ax.set_xlabel('Velocity')
-ax.set_ylabel('Volume (last hour)')
-plt.show()
-
+#TODO: explore heteroskedasticity
 
 # weekdays vs weekends
 weekday_data = all_data[all_data["timestamp"].dt.dayofweek < 5]
